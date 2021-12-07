@@ -1,8 +1,8 @@
 
-def trianglo(n):
-    retval = 0
-    for i in range(n + 1):
-        retval = retval + i
+def trianglo(start, end):
+    retval = start - end
+    retval = retval * retval + abs(retval)
+    retval = retval / 2
     return retval
 
 
@@ -22,8 +22,7 @@ class CrabArray:
     def _find_rms(crabs, position):
         rms = 0
         for crab_position, crab_count in crabs.items():
-            distance = abs(crab_position - position)
-            fuel_spent = trianglo(distance) * crab_count
+            fuel_spent = trianglo(crab_position, position) * crab_count
             rms = rms + fuel_spent
         return rms
 
