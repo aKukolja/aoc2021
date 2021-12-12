@@ -1,3 +1,5 @@
+from collections import Counter
+
 
 class Node:
 
@@ -58,47 +60,46 @@ class Caves:
             retval = retval + str(node) + "\n"
         return retval
 
-    def _for_node(self, node, path_ordered, smol_visited, token):
-        path_ordered.append(node)
-        path = ",".join(map(lambda x: str(x.name), path_ordered))
-        node.visit += 1
+    def _for_node(self, node, path, visited, has_duplicates):
+        path.append(node)
+        path_str = ",".join(map(lambda x: str(x.name), path))
 
+        we_added = False
         if node.is_small:
-            smol_visited.add(node)
-        
+            if node in visited:
+                has_duplicates = True
+                we_added = True
+            visited.add(node)
+
         if node.name == "end":
             self._solutions = self._solutions + 1
-            print(path)
+            " print(path_str) "
         else:
-            for c in node.connections:
-                if c in smol_visited:
-                    if token is None:
-                        token = c
-                    elif c == token and token.visit < 2:
-                        pass
-                    else:
-                        # print("discard", path, "for", c.name, "token", token)
-                        continue
-                if c.name == "start": # or c.name == "end":
+            for next in node.connections:
+                if next.name == "start": # or c.name == "end":
                     continue
-                self._for_node(c, path_ordered, smol_visited, token)
+                " allow operation if no duplicates "
+                if not has_duplicates and next in visited:
+                    pass
+                elif next in visited:
+                    continue
+                self._for_node(next, path, visited, has_duplicates)
 
-        if node.is_small and token != node:
-            smol_visited.remove(node)
-
-        path_ordered.pop()
-        node.visit -= 1
+        if node.is_small and not we_added:
+            visited.discard(node)
+        path.pop()
 
     def solve(self):
         self._solutions = 0
-        path_ordered = []
-        smol_visited = set()
-        self._for_node(self._start, path_ordered, smol_visited, None)
+        path = []
+        visited = set()
+        self._for_node(self._start, path, visited, False)
+        " self._cpp(self._start, path_ordered, smol_visited, False) "
 
 
 if __name__ == "__main__":
     caves = Caves()
-    with open("test.txt", "r") as f:
+    with open("data.txt", "r") as f:
         for line in f:
             caves.add(line.strip())
     caves.solve()
