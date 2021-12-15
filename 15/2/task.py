@@ -1,6 +1,6 @@
 import math
 from collections import defaultdict
-from collections import PriorityQueue as q
+import heapq
 
 
 class Maze:
@@ -52,6 +52,27 @@ class Maze:
         self._start = 0, 0
         self._end = self._height - 1, self._width - 1
 
+    def heap_dijkstra(self):
+        distance_to = defaultdict(lambda: math.inf)
+        distance_to[self._start] = 0
+        pq = [(0, self._start)]
+        while len(pq) > 0:
+            node_distance, node = heapq.heappop(pq)
+
+            if node_distance > distance_to[node]:
+                continue
+
+            row, column = node
+            neighbours = filter(self._bounds, ((row + x, column + y) for x, y in self._kernel))
+            for neighbour in neighbours:
+                n_cost = self._get_cost(neighbour)
+                distance = node_distance + n_cost
+                if distance < distance_to[neighbour]:
+                    distance_to[neighbour] = distance
+                    heapq.heappush(pq, (distance, neighbour))
+        return distance_to[self._end]
+
+
     def _check_neighbours(self, node, visited, distance_to, visit_candidates):
         all_checked = True
         row, column = node
@@ -70,7 +91,7 @@ class Maze:
             visit_candidates.add(neighbour)
         return all_checked
 
-    def dijsktra(self):
+    def dijkstra(self):
         visited = { self._start }
         in_consideration = { self._start }
         distance_to = defaultdict(lambda: math.inf)
@@ -98,5 +119,5 @@ if __name__ == "__main__":
             stripped = line.strip()
             maze.add_nodes(stripped)
     maze.expand(5)
-    print(maze.dijsktra())
+    print(maze.heap_dijkstra())
 
