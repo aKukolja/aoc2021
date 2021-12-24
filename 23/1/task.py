@@ -8,12 +8,165 @@ rooms = {
     (2, 9): 'D', (3, 9): 'D'
 }
 
+
+costs = {
+    'A': 1,
+    'B': 10,
+    'C': 100,
+    'D': 1000
+}
+
+
+class Shrimp:
+
+    def __init__(self, name):
+        self._name = name
+        self._moved = 0
+        self._cost = costs[name]
+
+    def move(self):
+        self._moved += 1
+
+    def unmove(self):
+        self._moved -= 1
+
+    def moved(self):
+        return self._moved
+
+    def cost(self):
+        return self._cost
+
+    def name(self):
+        return self._name
+
+    def __str__(self):
+        return self._name
+
+
+class Room:
+
+    def __init__(self, name, size, top_to_bottom):
+        self._name = name
+        self._size = size
+        self._stack = list(reversed(top_to_bottom))
+
+    def state(self):
+        if len(self._stack) == 2:
+            return tuple(self._stack)
+        if len(self._stack) == 1:
+            return None, self._stack[0]
+        return None, None
+
+    def free(self):
+        return all(map(lambda o: o == self._name, self._stack))
+
+    def done(self):
+        return len(self._stack) == 2 and all(map(lambda o: o == self._name, self._stack))
+
+    def shrimps(self):
+        return [s for s in self._stack]
+
+    def can_stay(self, shrimp):
+        if shrimp.name() != self._name:
+            return False
+        if len(self._stack) == 2 and shrimp == self._stack[1]:
+            if self._stack[0].name() == self._name:
+                return True
+            else:
+                return False
+        if len(self._stack) == 1 and shrimp == self._stack[0]:
+            return True
+        return False
+
+    def __str__(self):
+        return "".join(map(str, reversed(self._stack)))
+
+
+class Hall:
+
+    def __init__(self, a: Room, b: Room, c: Room, d: Room):
+        self._state = [None] * 11
+        self._a = a
+        self._b = b
+        self._c = c
+        self._d = d
+        self._shrimps = self._a.shrimps() + self._b.shrimps() + self._c.shrimps() + self._c.shrimps()
+        self._go_low = {
+            2: self._a, 4: self._b, 6: self._c, 8: self._d
+        }
+
+    def _state(self):
+        return tuple(self._state), self._a.state(), self._b.state(), self._c.state(), self._d.state()
+
+    def _can_stay(self, shrimp):
+        room = {
+            'A': self._a,
+            'B': self._b,
+            'C': self._c,
+            'D': self._d,
+        }[shrimp.name()]
+        return room.can_stay(shrimp)
+
+    def _solve(self):
+        # if all shrimps are in place complete
+        if self._a.done() and self._b.done() and self._c.done() and self._d.done():
+            return 0
+        for shrimp in self._shrimps:
+            # if the shrimp can stay do not move it
+            if self._can_stay(shrimp):
+                continue
+            if shrimp.moved() == 1:
+                # shrimp was moved already
+                pass
+            else:
+                # shrimp was not moved
+                options = self._options(shrimp)
+                pass
+
+    def solve(self):
+        # Depth First Search
+        for shrimp in self._shrimps:
+            # if room is free, move shrimp to room
+            # if the shrimp moved skip it
+            # if the shrimp has not moved, move it
+            pass
+
+
+        return 0
+
+    def __str__(self):
+        retval = "".join(map(lambda x: "." if x is None else x.name(), self._state))
+        retval += "\n"
+        a = str(self._a)
+        b = str(self._b)
+        c = str(self._c)
+        d = str(self._d)
+        retval += "  " + a[0] + " " + b[0] + " " + c[0] + " " + d[0] + "\n"
+        retval += "  " + a[1] + " " + b[1] + " " + c[1] + " " + d[1] + "\n"
+        return retval
+
+
+test = Hall(
+    Room('A', 2, [Shrimp('B'), Shrimp('A')]),
+    Room('B', 2, [Shrimp('C'), Shrimp('D')]),
+    Room('C', 2, [Shrimp('B'), Shrimp('C')]),
+    Room('D', 2, [Shrimp('D'), Shrimp('A')]),
+)
+
+print(test)
+
+
 animal_rooms = {
     'A': [(2, 3), (3, 3)],
     'B': [(2, 5), (3, 5)],
     'C': [(2, 7), (3, 7)],
     'D': [(2, 9), (3, 9)],
 }
+
+
+def can_move(world, animal_name):
+    all(map(lambda c: world[c] == '.' or world[c] == animal_name, animal_rooms[animal_name]))
+
 
 forbidden = {(1, 3), (1, 5), (1, 7), (1, 9)}
 
@@ -32,13 +185,6 @@ test = [
     "###A#D#C#A###",
     "#############"
 ]
-
-costs = {
-    'A': 1,
-    'B': 10,
-    'C': 100,
-    'D': 1000
-}
 
 
 def no_collision(world, animal: tuple):
@@ -74,7 +220,7 @@ def possible_stops(world: dict, animal_name, cost: int, position: tuple, entered
         possible_stops(world, animal_name, cost + costs[animal_name], candidate, entered, checked)
 
 
-def calc_cost(world, shrimps, moved: set):
+def calc_cost(world, shrimps, moved: dict):
     test = True
     for room, target in rooms.items():
         assert(world[room] != '#')
@@ -96,7 +242,7 @@ def calc_cost(world, shrimps, moved: set):
         possible_stops(world, shrimp_name, 0, s, positions, set())
         for new_position, move_cost in positions.items():
             # change world to reflect movement
-            moved.add(new_position)
+            moved[new_position] = moved[s] + 1
             world[new_position] = shrimp_name
             world[s] = '.'
             shrimps.add(new_position)
@@ -138,7 +284,7 @@ if __name__ == "__main__":
             if val in "ABCD":
                 m_shrimps.add(m_coord)
 
-    m_cost = calc_cost(m_world, m_shrimps, set())
+    m_cost = calc_cost(m_world, m_shrimps, defaultdict(lambda: 0))
     print(m_cost)
     """
     possible = dict()
